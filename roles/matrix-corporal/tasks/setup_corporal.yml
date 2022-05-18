@@ -23,6 +23,8 @@
     dest: "{{ matrix_corporal_container_src_files_path }}"
     version: "{{ matrix_corporal_docker_image.split(':')[1] }}"
     force: "yes"
+  become: true
+  become_user: "{{ matrix_user_username }}"
   register: matrix_corporal_git_pull_results
   when: "matrix_corporal_enabled|bool and matrix_corporal_container_image_self_build|bool"
 
@@ -45,6 +47,10 @@
     force_source: "{{ matrix_corporal_docker_image_force_pull if ansible_version.major > 2 or ansible_version.minor >= 8 else omit }}"
     force: "{{ omit if ansible_version.major > 2 or ansible_version.minor >= 8 else matrix_corporal_docker_image_force_pull }}"
   when: "matrix_corporal_enabled|bool and not matrix_corporal_container_image_self_build|bool"
+  register: result
+  retries: "{{ matrix_container_retries_count }}"
+  delay: "{{ matrix_container_retries_delay }}"
+  until: result is not failed
 
 - name: Ensure Matrix Corporal config installed
   copy:
